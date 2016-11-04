@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # lhq@python279.org
 #
