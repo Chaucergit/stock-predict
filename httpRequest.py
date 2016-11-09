@@ -6,12 +6,14 @@
 
 import urllib
 import urllib2
+from retry import retry
 
 
 class HttpRequest:
     def __init__(self, url):
         self._url = url
 
+    @retry(tries=5, delay=1)
     def post(self, data={}):
         req = urllib2.Request(
             url=self._url,
@@ -19,6 +21,7 @@ class HttpRequest:
         )
         return urllib2.urlopen(req).read()
 
+    @retry(tries=5, delay=1)
     def get(self):
         req = urllib2.Request(url=self._url)
         return urllib2.urlopen(req).read()
