@@ -24,7 +24,7 @@ class kNN(Stock):
         pass
 
     def predict(self):
-        result = defaultdict(set)
+        result = []
         for code in self.data:
             volume, chg_p, vma5 = Stock.get_col().index("volume"), Stock.get_col().index("chg_p"), Stock.get_col().index("vma5")
             data_array = np.array(self.data[code])
@@ -34,19 +34,19 @@ class kNN(Stock):
                 for v in volume_array:
                     training_data.append([v])
                 training_label = [["down", "up"][int(x > 5.0)] for x in chg_p_array]
-                trend = classify0([vma5_array[-1]], np.array(training_data), training_label, 5)
-                result[trend].add(code)
+                trend, percent = classify0([vma5_array[-1]], np.array(training_data), training_label, 5)
+                if trend == "up":
+                    result.append((code, percent))
             except:
                 trace_log()
                 pass
-        return result
+        sorted_result = sorted(result, key=operator.itemgetter(1), reverse=True)
+        return sorted_result
 
 
 if __name__ == '__main__':
     k = kNN()
     r = k.predict()
-    with open(os.path.join(mydir(), "data", time.strftime("%Y%m%d", time.localtime())+".txt"), "w") as f:
-        for key in r:
-            f.write("#######" + key + "######\n")
-            for code in r[key]:
-                f.write(code + "\n")
+    with open(os.path.join(mydir(), "data", time.strftime("kNN_%Y%m%d", time.localtime())+".txt"), "w") as f:
+        for code, percent in r:
+            f.write(code + "\n")

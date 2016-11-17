@@ -24,7 +24,7 @@ class kNN_verify(Stock):
         self.reload_all(next_data_file)
         with open(os.path.join(mydir(), "data", predict_file), "r") as f:
             code_list = f.read().split('\n')
-            self.up_code = code_list[code_list.index("#######up######"):]
+            self.up_code = code_list
 
     def __del__(self):
         pass

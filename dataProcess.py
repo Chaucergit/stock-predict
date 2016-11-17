@@ -36,7 +36,7 @@ def classify0(data_in, training_data, training_label, k):
         vote_label = training_label[sorted_distances[i]]
         class_count[vote_label] = class_count.get(vote_label, 0) + 1
     sorted_class_count = sorted(class_count.iteritems(), key=operator.itemgetter(1), reverse=True)
-    return sorted_class_count[0][0]
+    return sorted_class_count[0][0], float(sorted_class_count[0][1])/float(k)
 
 
 if __name__ == '__main__':

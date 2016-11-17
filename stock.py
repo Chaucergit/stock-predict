@@ -80,8 +80,9 @@ class Stock:
                 for i in range(0, 5):
                     try:
                         logging.info("get daily data of %s" % (key+code))
-                        p = re.compile(r"[,\-](\d+)")
-                        self.data[code] = json.loads(p.sub(r"\1", HttpRequest(DAILY_PRICE_URL % (key+code)).get()))["record"]
+                        s = re.compile(r",(\d+)").sub(r"\1", HttpRequest(DAILY_PRICE_URL % (key+code)).get())
+                        s = re.compile(r"(\d+)\_(\d+)\_(\d+)").sub(r"\1\2\3", s)
+                        self.data[code] = json.loads(s)["record"]
                         break
                     except:
                         trace_log()
