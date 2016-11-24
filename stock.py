@@ -10,6 +10,8 @@ import re
 import logging
 import time
 import cPickle
+import threading
+import cProfile
 from collections import defaultdict
 from httpRequest import HttpRequest
 from error import trace_log
@@ -77,16 +79,42 @@ class Stock:
         self.data.clear()
         for key in self.code:
             for code in self.code[key]:
-                for i in range(0, 5):
+                def retrieve_data(key, code):
                     try:
                         logging.info("get daily data of %s" % (key+code))
                         s = re.compile(r",(\d+)").sub(r"\1", HttpRequest(DAILY_PRICE_URL % (key+code)).get())
                         s = re.compile(r"(\d+)\_(\d+)\_(\d+)").sub(r"\1\2\3", s)
                         self.data[code] = json.loads(s)["record"]
-                        break
                     except:
-                        trace_log()
-                        time.sleep(5)
+                        pass
+                retrieve_data(key, code)
+        return self.data
+
+    def fast_refresh_all(self):
+        self.data.clear()
+        for key in self.code:
+            all_codes = list(self.code[key])
+            for start in range(0, len(self.code[key]), 10):
+                codes = all_codes[start:start+10]
+
+                def retrieve_data(key, codes):
+                    threads = []
+                    for code in codes:
+                        def __retrieve_data(key, code):
+                            try:
+                                logging.info("get daily data of %s" % (key+code))
+                                s = re.compile(r",(\d+)").sub(r"\1", HttpRequest(DAILY_PRICE_URL % (key+code)).get())
+                                s = re.compile(r"(\d+)\_(\d+)\_(\d+)").sub(r"\1\2\3", s)
+                                self.data[code] = json.loads(s)["record"]
+                            except:
+                                pass
+                        t = threading.Thread(target=__retrieve_data, args=(key, code))
+                        t.setDaemon(True)
+                        t.start()
+                        threads.append(t)
+                    for t in threads:
+                        t.join()
+                retrieve_data(key, codes)
         return self.data
 
     def save_all(self):
@@ -103,7 +131,7 @@ class Stock:
     def reload_all(self, name=time.strftime("%Y%m%d", time.localtime())+".pkl"):
         filename = os.path.join(mydir(), "data", name)
         if not os.path.exists(filename):
-            self.refresh_all()
+            self.fast_refresh_all()
             self.save_all()
         else:
             try:
@@ -112,7 +140,7 @@ class Stock:
                     self.data = cPickle.load(f)
             except:
                 trace_log()
-                self.refresh_all()
+                self.fast_refresh_all()
                 self.save_all()
         return self.data
 
@@ -126,17 +154,23 @@ class Stock:
 
 
 if __name__ == '__main__':
+    # unittest
     import unittest
 
     class MyTest(unittest.TestCase):
         def test_get_daily(self):
             s = Stock()
             self.assertIsNotNone(s.refresh_all())
+            self.assertIsNotNone(s.fast_refresh_all())
             self.assertIsNotNone(s.save_all())
             self.assertNotEqual(s.reload_all(), {})
 
         def test_get_col(self):
             self.assertEqual(Stock.get_col(), DAILY_PRICE_COL)
             self.assertEqual(Stock.get_col_cn(), DAILY_PRICE_COL_CN)
-
     unittest.main()
+
+    # performance testing
+    s = Stock()
+    cProfile.run("s.refresh_all()")
+    cProfile.run("s.fast_refresh_all()")
