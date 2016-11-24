@@ -52,5 +52,5 @@ if __name__ == '__main__':
     k = bottom()
     r = k.predict()
     with open(os.path.join(mydir(), "data", time.strftime("bottom_%Y%m%d", time.localtime())+".txt"), "w") as f:
-        for code, down_number in r:
+        for code, down_number in r[0:100]:
             f.write(code + "\n")
