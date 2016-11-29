@@ -24,7 +24,13 @@ class PredictVerify(Stock):
         self.reload_all(close_data_file)
         with open(os.path.join(mydir(), "data", predict_file), "r") as f:
             code_list = f.read().split('\n')
-            self.up_code = code_list
+            self.up_code = []
+            for code in code_list:
+                if " " in code:
+                    c = code.split(" ")
+                    self.up_code.append(c[0])
+                else:
+                    self.up_code.append(code)
 
     def __del__(self):
         pass
